@@ -56,6 +56,34 @@ declare namespace API {
     success?: boolean;
   };
 
+  type InventoryListItem = {
+    companyCode?: string;
+    previousFactoryCode?: string;
+    productFactoryCode?: string;
+    startOperationDate?: string;
+    endOperationDate?: string;
+    previousFactoryName?: string;
+    productFactoryName?: string;
+    materialDepartmentCode?: string;
+    environmentalInformation?: string;
+    authenticationFlag?: string;
+    groupCorporateCode?: string;
+    integrationPattern?: string;
+    hulftid?: string;
+  };
+
+  type InventoryList = {
+    data?: InventoryListItem[];
+    /** 列表的内容总数 */
+    total?: number;
+    success?: boolean;
+  };
+
+  type InventoryParams = {
+    previousFactoryCode?: string;
+    productFactoryCode?: string;
+  };
+
   type FakeCaptcha = {
     code?: number;
     status?: string;

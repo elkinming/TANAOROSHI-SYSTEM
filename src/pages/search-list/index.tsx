@@ -12,7 +12,7 @@ import {
 import { FormattedMessage, useIntl, useRequest } from '@umijs/max';
 import { Button, Drawer, Input, message } from 'antd';
 import React, { useCallback, useRef, useState } from 'react';
-import { removeRule, rule } from '@/services/ant-design-pro/api';
+import { getAllInventory, removeRule, rule } from '@/services/ant-design-pro/api';
 import CreateForm from './components/CreateForm';
 import UpdateForm from './components/UpdateForm';
 
@@ -21,7 +21,7 @@ const SearchList: React.FC = () => {
 
   const [showDetail, setShowDetail] = useState<boolean>(false);
   const [currentRow, setCurrentRow] = useState<API.RuleListItem>();
-  const [selectedRowsState, setSelectedRows] = useState<API.RuleListItem[]>([]);
+  const [selectedRowsState, setSelectedRows] = useState<API.InventoryListItem[]>([]);
 
   /**
    * @en-US International configuration
@@ -44,7 +44,7 @@ const SearchList: React.FC = () => {
     },
   });
 
-  const columns: ProColumns<API.RuleListItem>[] = [
+  const columns: ProColumns<API.InventoryListItem>[] = [
     {
       title: "会社コード",
       dataIndex: 'companyCode',
@@ -60,6 +60,7 @@ const SearchList: React.FC = () => {
           </a>
         );
       },
+      search: false,
     },
     {
       title: "従来工場コード",
@@ -75,51 +76,61 @@ const SearchList: React.FC = () => {
       title: "運用開始日",
       dataIndex: 'startOperationDate',
       valueType: 'dateTime',
+      search: false,
     },
     {
       title: "運用終了日",
       dataIndex: 'endOperationDate',
       valueType: 'dateTime',
+      search: false,
     },
     {
       title: "従来工場名",
       dataIndex: 'previousFactoryName',
       valueType: 'textarea',
+      search: false,
     },
     {
       title: "商品工場名",
       dataIndex: 'productFactoryName',
       valueType: 'textarea',
+      search: false,
     },
     {
       title: "マテリアル部署コード",
       dataIndex: 'materialDepartmentCode',
       valueType: 'textarea',
+      search: false,
     },
     {
       title: "環境情報",
       dataIndex: 'environmentalInformation',
       valueType: 'textarea',
+      search: false,
     },
     {
       title: "認証フラグ",
       dataIndex: 'authenticationFlag',
       valueType: 'textarea',
+      search: false,
     },
     {
       title: "企業コード",
       dataIndex: 'companyCode',
       valueType: 'textarea',
+      search: false,
     },
     {
       title: "連携パターン",
       dataIndex: 'integrationPattern',
       valueType: 'textarea',
+      search: false,
     },
     {
       title: "HULFTID",
       dataIndex: 'hulftid',
       valueType: 'textarea',
+      search: false,
     },
     
 
@@ -129,7 +140,7 @@ const SearchList: React.FC = () => {
   return (
     <PageContainer>
       {contextHolder}
-      <ProTable<API.RuleListItem, API.PageParams>
+      <ProTable<API.InventoryListItem, API.InventoryParams>
         headerTitle=""
         actionRef={actionRef}
         rowKey="key"
@@ -139,7 +150,7 @@ const SearchList: React.FC = () => {
         toolBarRender={() => [
           <CreateForm key="create" reload={actionRef.current?.reload} />,
         ]}
-        request={rule}
+        request={getAllInventory}
         columns={columns}
         rowSelection={{
           onChange: (_, selectedRows) => {

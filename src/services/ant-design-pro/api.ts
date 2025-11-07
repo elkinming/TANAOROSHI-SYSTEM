@@ -2,6 +2,8 @@
 /* eslint-disable */
 import { request } from '@umijs/max';
 
+const URL = "http://127.0.0.1:8002"
+
 /** 获取当前的用户 GET /api/currentUser */
 export async function currentUser(options?: { [key: string]: any }) {
   return request<{
@@ -90,5 +92,22 @@ export async function removeRule(options?: { [key: string]: any }) {
       method: 'delete',
       ...(options || {}),
     },
+  });
+}
+
+// function for getting all the inventory
+export async function getAllInventory(
+  params: {
+    previousFactoryCode?: string;
+    productFactoryCode?: string;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<API.InventoryList>(`${URL}/inventory/record-list`, {
+    method: 'GET',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
   });
 }
