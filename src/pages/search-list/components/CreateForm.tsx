@@ -1,17 +1,18 @@
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import {
   type ActionType,
   ModalForm,
+  ProFormDatePicker,
   ProFormText,
   ProFormTextArea,
 } from '@ant-design/pro-components';
 import { FormattedMessage, useIntl, useRequest } from '@umijs/max';
 import { Button, Col, message, Row } from 'antd';
 import type { FC } from 'react';
-import { addRule } from '@/services/ant-design-pro/api';
+import { addInventoryRecord, addRule } from '@/services/ant-design-pro/api';
 
 interface CreateFormProps {
-  reload?: ActionType['reload'];
+  reload?: ActionType['reload'],
 }
 
 const CreateForm: FC<CreateFormProps> = (props) => {
@@ -24,7 +25,7 @@ const CreateForm: FC<CreateFormProps> = (props) => {
    * */
   const intl = useIntl();
 
-  const { run, loading } = useRequest(addRule, {
+  const {run, loading} = useRequest(addInventoryRecord, {
     manual: true,
     onSuccess: () => {
       messageApi.success('新規要素が登録されました。');
@@ -43,13 +44,12 @@ const CreateForm: FC<CreateFormProps> = (props) => {
         trigger={
           <Button type="primary" icon={<PlusOutlined />}>
             <FormattedMessage id="pages.searchTable.new" defaultMessage="New" />
-          </Button>
+          </Button>         
         }
         width="80%"
         modalProps={{ okButtonProps: { loading } }}
         onFinish={async (value) => {
-          await run({ data: value as API.RuleListItem });
-
+          await run(value as API.InventoryListItem);
           return true;
         }}
       >
@@ -67,10 +67,10 @@ const CreateForm: FC<CreateFormProps> = (props) => {
         </Row>
         <Row>
           <Col span={8}>
-            <ProFormText rules={[{ required: true, message: "必要" }]} width="md" label="運用開始日" name="startOperationDate" />
+            <ProFormDatePicker  rules={[{ required: true, message: "必要" }]} width="md" label="運用開始日" name="startOperationDate" />
           </Col>
           <Col span={8}>
-            <ProFormText rules={[{ required: true, message: "必要" }]} width="md" label="運用終了日" name="endOperationDate" />
+            <ProFormDatePicker  rules={[{ required: true, message: "必要" }]} width="md" label="運用終了日" name="endOperationDate" />
           </Col>
           <Col span={8}>
             <ProFormText width="md" label="従来工場名" name="previousFactoryName" />

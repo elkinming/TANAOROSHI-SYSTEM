@@ -1,245 +1,109 @@
+import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import {
-  ProFormDateTimePicker,
-  ProFormRadio,
-  ProFormSelect,
+  type ActionType,
+  ModalForm,
+  ProFormDatePicker,
   ProFormText,
   ProFormTextArea,
-  StepsForm,
 } from '@ant-design/pro-components';
 import { FormattedMessage, useIntl, useRequest } from '@umijs/max';
-import { Modal, message } from 'antd';
-import React, { cloneElement, useCallback, useState } from 'react';
-import { updateRule } from '@/services/ant-design-pro/api';
+import { Button, Col, message, Row } from 'antd';
+import type { FC } from 'react';
+import { addInventoryRecord, addRule, rule, updateInventoryRecord } from '@/services/ant-design-pro/api';
 
-export type FormValueType = {
-  target?: string;
-  template?: string;
-  type?: string;
-  time?: string;
-  frequency?: string;
-} & Partial<API.RuleListItem>;
+interface UpdateFormProps {
+  reload?: ActionType['reload'],
+  inventoryItem?: API.InventoryListItem
+}
 
-export type UpdateFormProps = {
-  trigger?: React.ReactElement<any>;
-  onOk?: () => void;
-  values: Partial<API.RuleListItem>;
-};
-
-const UpdateForm: React.FC<UpdateFormProps> = (props) => {
-  const { onOk, values, trigger } = props;
-
-  const intl = useIntl();
-
-  const [open, setOpen] = useState(false);
+const UpdateForm: FC<UpdateFormProps> = (props) => {
+  const { reload, inventoryItem } = props;
 
   const [messageApi, contextHolder] = message.useMessage();
+  /**
+   * @en-US International configuration
+   * @zh-CN 国际化配置
+   * */
+  const intl = useIntl();
 
-  const { run } = useRequest(updateRule, {
+  const {run, loading} = useRequest(updateInventoryRecord, {
     manual: true,
     onSuccess: () => {
-      messageApi.success('Configuration is successful');
-      onOk?.();
+      messageApi.success('新規要素が登録されました。');
+      reload?.();
     },
     onError: () => {
-      messageApi.error('Configuration failed, please try again!');
+      messageApi.error('新規要素ができませんでした。');
     },
   });
-
-  const onCancel = useCallback(() => {
-    setOpen(false);
-  }, []);
-
-  const onOpen = useCallback(() => {
-    setOpen(true);
-  }, []);
-
-  const onFinish = useCallback(
-    async (values?: any) => {
-      await run({ data: values });
-
-      onCancel();
-    },
-    [onCancel, run],
-  );
 
   return (
     <>
       {contextHolder}
-      {trigger
-        ? cloneElement(trigger, {
-            onClick: onOpen,
-          })
-        : null}
-      <StepsForm
-        stepsProps={{
-          size: 'small',
+      <ModalForm
+        title="新規要素"
+        trigger={<Button icon={<EditOutlined />}> </Button>}
+        width="80%"
+        initialValues={inventoryItem}
+        modalProps={{ okButtonProps: { loading } }}
+        onFinish={async (value) => {
+          
+          await run(value as API.InventoryListItem);
+          // console.log("UPDATE LOGIC");
+          return true;
         }}
-        stepsFormRender={(dom, submitter) => {
-          return (
-            <Modal
-              width={640}
-              bodyStyle={{ padding: '32px 40px 48px' }}
-              destroyOnClose
-              title={intl.formatMessage({
-                id: 'pages.searchTable.updateForm.ruleConfig',
-                defaultMessage: '规则配置',
-              })}
-              open={open}
-              footer={submitter}
-              onCancel={onCancel}
-            >
-              {dom}
-            </Modal>
-          );
-        }}
-        onFinish={onFinish}
       >
-        <StepsForm.StepForm
-          initialValues={values}
-          title={intl.formatMessage({
-            id: 'pages.searchTable.updateForm.basicConfig',
-            defaultMessage: '基本信息',
-          })}
-        >
-          <ProFormText
-            name="name"
-            label={intl.formatMessage({
-              id: 'pages.searchTable.updateForm.ruleName.nameLabel',
-              defaultMessage: '规则名称',
-            })}
-            width="md"
-            rules={[
-              {
-                required: true,
-                message: (
-                  <FormattedMessage
-                    id="pages.searchTable.updateForm.ruleName.nameRules"
-                    defaultMessage="请输入规则名称！"
-                  />
-                ),
-              },
-            ]}
-          />
-          <ProFormTextArea
-            name="desc"
-            width="md"
-            label={intl.formatMessage({
-              id: 'pages.searchTable.updateForm.ruleDesc.descLabel',
-              defaultMessage: '规则描述',
-            })}
-            placeholder={intl.formatMessage({
-              id: 'pages.searchTable.updateForm.ruleDesc.descPlaceholder',
-              defaultMessage: '请输入至少五个字符',
-            })}
-            rules={[
-              {
-                required: true,
-                message: (
-                  <FormattedMessage
-                    id="pages.searchTable.updateForm.ruleDesc.descRules"
-                    defaultMessage="请输入至少五个字符的规则描述！"
-                  />
-                ),
-                min: 5,
-              },
-            ]}
-          />
-        </StepsForm.StepForm>
-        <StepsForm.StepForm
-          initialValues={{
-            target: '0',
-            template: '0',
-          }}
-          title={intl.formatMessage({
-            id: 'pages.searchTable.updateForm.ruleProps.title',
-            defaultMessage: '配置规则属性',
-          })}
-        >
-          <ProFormSelect
-            name="target"
-            width="md"
-            label={intl.formatMessage({
-              id: 'pages.searchTable.updateForm.object',
-              defaultMessage: '监控对象',
-            })}
-            valueEnum={{
-              0: '表一',
-              1: '表二',
-            }}
-          />
-          <ProFormSelect
-            name="template"
-            width="md"
-            label={intl.formatMessage({
-              id: 'pages.searchTable.updateForm.ruleProps.templateLabel',
-              defaultMessage: '规则模板',
-            })}
-            valueEnum={{
-              0: '规则模板一',
-              1: '规则模板二',
-            }}
-          />
-          <ProFormRadio.Group
-            name="type"
-            label={intl.formatMessage({
-              id: 'pages.searchTable.updateForm.ruleProps.typeLabel',
-              defaultMessage: '规则类型',
-            })}
-            options={[
-              {
-                value: '0',
-                label: '强',
-              },
-              {
-                value: '1',
-                label: '弱',
-              },
-            ]}
-          />
-        </StepsForm.StepForm>
-        <StepsForm.StepForm
-          initialValues={{
-            type: '1',
-            frequency: 'month',
-          }}
-          title={intl.formatMessage({
-            id: 'pages.searchTable.updateForm.schedulingPeriod.title',
-            defaultMessage: '设定调度周期',
-          })}
-        >
-          <ProFormDateTimePicker
-            name="time"
-            width="md"
-            label={intl.formatMessage({
-              id: 'pages.searchTable.updateForm.schedulingPeriod.timeLabel',
-              defaultMessage: '开始时间',
-            })}
-            rules={[
-              {
-                required: true,
-                message: (
-                  <FormattedMessage
-                    id="pages.searchTable.updateForm.schedulingPeriod.timeRules"
-                    defaultMessage="请选择开始时间！"
-                  />
-                ),
-              },
-            ]}
-          />
-          <ProFormSelect
-            name="frequency"
-            label={intl.formatMessage({
-              id: 'pages.searchTable.updateForm.object',
-              defaultMessage: '监控对象',
-            })}
-            width="md"
-            valueEnum={{
-              month: '月',
-              week: '周',
-            }}
-          />
-        </StepsForm.StepForm>
-      </StepsForm>
+
+        <Row>
+          <Col span={8}>
+            <ProFormText rules={[{ required: true, message: "必要" }]} width="md" label="会社コード" name="companyCode" />
+          </Col>
+          <Col span={8}>
+            <ProFormText rules={[{ required: true, message: "必要" }]} width="md" label="従来工場コード" name="previousFactoryCode" />
+          </Col>
+          <Col span={8}>
+            <ProFormText rules={[{ required: true, message: "必要" }]} width="md" label="商品工場コード" name="productFactoryCode" />
+          </Col>
+        </Row>
+        <Row>
+          <Col span={8}>
+            <ProFormDatePicker  rules={[{ required: true, message: "必要" }]} width="md" label="運用開始日" name="startOperationDate" />
+          </Col>
+          <Col span={8}>
+            <ProFormDatePicker  rules={[{ required: true, message: "必要" }]} width="md" label="運用終了日" name="endOperationDate" />
+          </Col>
+          <Col span={8}>
+            <ProFormText width="md" label="従来工場名" name="previousFactoryName" />
+          </Col>
+        </Row>
+        <Row>
+          <Col span={8}>
+            <ProFormText width="md" label="商品工場名" name="productFactoryName" />
+          </Col>
+          <Col span={8}>
+            <ProFormText width="md" label="マテリアル部署コード" name="materialDepartmentCode" />
+          </Col>
+          <Col span={8}>
+            <ProFormText width="md" label="環境情報" name="environmentalInformation" />
+          </Col>
+        </Row>
+        <Row>
+          <Col span={8}>
+            <ProFormText width="md" label="認証フラグ" name="authenticationFlag" />
+          </Col>
+          <Col span={8}>
+            <ProFormText width="md" label="企業コード" name="groupCorporateCode" />
+          </Col>
+          <Col span={8}>
+            <ProFormText width="md" label="連携パターン" name="integrationPattern" />
+          </Col>
+        </Row>
+        <Row>
+          <Col span={8}>
+            <ProFormText width="md" label="HULFTID" name="hulftid" />
+          </Col>
+        </Row>
+      </ModalForm>
     </>
   );
 };

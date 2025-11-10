@@ -30,7 +30,7 @@ export default [
   },
   {
     path: '/search',
-    name: 'マスタ管理',
+    name: 'search',
     icon: 'crown',
     routes: [
       {
@@ -39,17 +39,17 @@ export default [
       },
       {
         path: '/search/item',
-        name: '工場マスタ',
+        name: 'item',
         component: './search-list',
       },
     ],
   },
-  {
-    name: 'list.table-list',
-    icon: 'table',
-    path: '/list',
-    component: './table-list',
-  },
+  // {
+  //   name: 'list.table-list',
+  //   icon: 'table',
+  //   path: '/list',
+  //   component: './table-list',
+  // },
   {
     path: '/',
     redirect: '/welcome',

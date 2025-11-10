@@ -111,3 +111,35 @@ export async function getAllInventory(
     ...(options || {}),
   });
 }
+
+export async function addInventoryRecord(options?: { [key: string]: any }) {
+  return request<API.InventoryListItem>(`${URL}/inventory/record`, {
+    method: 'POST',
+    data: {
+      method: 'update',
+      ...(options || {}),
+    },
+    requestType: 'json',
+  });
+}
+
+export async function updateInventoryRecord(options?: { [key: string]: any }) {
+  return request<API.InventoryListItem>(`${URL}/inventory/record`, {
+    method: 'PUT',
+    data: {
+      method: 'update',
+      ...(options || {}),
+    },
+    requestType: 'json',
+  });
+}
+
+// Function for inserting a batch of records.
+// Body: record[]
+export async function addInventoryRecordBatch(options?: { [key: string]: any }) {
+  return request<API.InventoryListItem[]>(`${URL}/inventory/record-batch`, {
+    method: 'POST',
+    data: (options || []),
+    requestType: 'json',
+  });
+}
