@@ -28,11 +28,13 @@ const CreateForm: FC<CreateFormProps> = (props) => {
   const {run, loading} = useRequest(addInventoryRecord, {
     manual: true,
     onSuccess: () => {
-      messageApi.success('新規要素が登録されました。');
-      reload?.();
+      messageApi.success('新規登録されました。');
+      setTimeout(() => {
+        reload?.();
+      },1000)
     },
     onError: () => {
-      messageApi.error('新規要素ができませんでした。');
+      messageApi.error('新規登録できません。');
     },
   });
 
@@ -40,14 +42,14 @@ const CreateForm: FC<CreateFormProps> = (props) => {
     <>
       {contextHolder}
       <ModalForm
-        title="新規要素"
+        title="新規登録"
         trigger={
-          <Button type="primary" icon={<PlusOutlined />}>
+          <Button type="primary">
             <FormattedMessage id="pages.searchTable.new" defaultMessage="New" />
           </Button>         
         }
         width="80%"
-        modalProps={{ okButtonProps: { loading } }}
+        modalProps={{ okButtonProps: { loading }, okText: "登録" }}
         onFinish={async (value) => {
           await run(value as API.InventoryListItem);
           return true;

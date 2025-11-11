@@ -67,7 +67,7 @@ export default {
   'pages.searchTable.config': '構成',
   'pages.searchTable.subscribeAlert': 'アラートを購読する',
   'pages.searchTable.title': 'お問い合わせフォーム',
-  'pages.searchTable.new': '新しい',
+  'pages.searchTable.new': '新規登録',
   'pages.searchTable.chosen': '選んだ項目',
   'pages.searchTable.item': '項目',
   'pages.searchTable.totalServiceCalls': 'サービスコールの総数',

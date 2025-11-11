@@ -23,15 +23,15 @@ export default [
     ],
   },
   {
-    path: '/welcome',
+    path: '/',
     name: 'welcome',
     icon: 'smile',
     component: './Welcome',
+    hideInMenu: true 
   },
   {
     path: '/search',
     name: 'search',
-    icon: 'crown',
     routes: [
       {
         path: '/search',
@@ -50,10 +50,6 @@ export default [
   //   path: '/list',
   //   component: './table-list',
   // },
-  {
-    path: '/',
-    redirect: '/welcome',
-  },
   {
     path: '*',
     layout: false,

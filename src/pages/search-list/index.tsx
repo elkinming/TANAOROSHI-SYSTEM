@@ -18,6 +18,8 @@ import { addInventoryRecordBatch, getAllInventory, removeRule, rule } from '@/se
 import CreateForm from './components/CreateForm';
 import UpdateForm from './components/UpdateForm';
 import K from '@/services/ant-design-pro/constants';
+import PageContent from '@/components/PageContent';
+import PageTitle from '@/components/PageTitle';
 
 const SearchList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
@@ -93,13 +95,13 @@ const SearchList: React.FC = () => {
         // console.log(normalizedData);
 
         await addInventoryRecordBatch(normalizedData);
-        message.success('ファイルのデータが登録されました。');
+        message.success('アップロードされました。');
         setTimeout(() => {
-          actionRef.current?.reloadAndRest?.();
+          actionRef.current?.reload?.();
         }, 1000);
 
       } catch (error) {
-        message.error('ファイルの形式が無効です。');
+        message.error('アップロードできません。');
       }
       
     };
@@ -114,7 +116,7 @@ const SearchList: React.FC = () => {
       search: false,
       render: (dom, entity) => {
         return (
-          <UpdateForm key="create" inventoryItem={entity} reload={actionRef.current?.reloadAndRest} />
+          <UpdateForm key="create" inventoryItem={entity} reload={actionRef.current?.reload} />
         );
       },
     },
@@ -122,6 +124,8 @@ const SearchList: React.FC = () => {
       title: "会社コード",
       dataIndex: 'companyCode',
       search: false,
+      // Define the column width
+      // width: 1000
     },
     {
       title: "従来工場コード",
@@ -199,38 +203,45 @@ const SearchList: React.FC = () => {
 
 
   return (
-    <PageContainer>
+    <PageContainer title={false} breadcrumbRender={false}>
       {contextHolder}
-      <ProTable<API.InventoryListItem, API.InventoryParams>
-        headerTitle=""
-        actionRef={actionRef}
-        rowKey="key"
-        search={{
-          labelWidth: 120,
-        }}
-        toolBarRender={() => [
-          <Space size="middle">
-            <CreateForm key="create" reload={actionRef.current?.reloadAndRest} />
-            <Button onClick={downloadData}>ダウンロード</Button>
-            <Upload
-              accept=".xlsx, .xls"
-              beforeUpload={uploadData}
-              showUploadList={false}
-            >
-              <Button icon={<UploadOutlined />}>アップロード</Button>
-            </Upload>
-          </Space>
-        ]}
-        request={getAllInventory}
-        onDataSourceChange={(data) => {setTableData(data);}}
-        columns={columns}
-        // Hide selection checkbox
-        // rowSelection={{
-        //   onChange: (_, selectedRows) => {
-        //     setSelectedRows(selectedRows);
-        //   },
-        // }}
-      />
+
+      <PageContent noCustomer={false} noPeriod={false}>
+        <div className="u_box">
+          <PageTitle
+            pageTitle="menu.search.item"
+            pgId={"ABCD-1234"}
+          />
+        </div>
+
+        <ProTable<API.InventoryListItem, API.InventoryParams>
+          headerTitle=""
+          actionRef={actionRef}
+          rowKey="key"
+          search={{
+            labelWidth: 120,
+            resetText:"クリア"
+          }}
+          toolBarRender={() => [
+            <Space size="small">
+              <CreateForm key="create" reload={actionRef.current?.reload} />
+              <Button onClick={downloadData}>ダウンロード</Button>
+              <Upload accept=".xlsx, .xls" beforeUpload={uploadData} showUploadList={false}>
+                <Button>アップロード</Button>
+              </Upload>
+            </Space>
+          ]}
+          // Add class for customized toolbar CSS
+          className='custom-toolbar'
+          request={getAllInventory}
+          onDataSourceChange={(data) => {setTableData(data);}}
+          columns={columns}
+          options={{ fullScreen: false,  reload :false, density: false, setting: false}}
+          scroll={{ x: 'max-content' }}
+
+        />
+
+      </PageContent>
 
     </PageContainer>
   );

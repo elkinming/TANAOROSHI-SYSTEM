@@ -29,11 +29,13 @@ const UpdateForm: FC<UpdateFormProps> = (props) => {
   const {run, loading} = useRequest(updateInventoryRecord, {
     manual: true,
     onSuccess: () => {
-      messageApi.success('新規要素が登録されました。');
-      reload?.();
+      messageApi.success('新規編集されました。');
+      setTimeout(() => {
+        reload?.();
+      },1000)
     },
     onError: () => {
-      messageApi.error('新規要素ができませんでした。');
+      messageApi.error('新規編集できません。');
     },
   });
 
@@ -41,11 +43,11 @@ const UpdateForm: FC<UpdateFormProps> = (props) => {
     <>
       {contextHolder}
       <ModalForm
-        title="新規要素"
+        title="新規編集"
         trigger={<Button icon={<EditOutlined />}> </Button>}
         width="80%"
         initialValues={inventoryItem}
-        modalProps={{ okButtonProps: { loading } }}
+        modalProps={{ okButtonProps: { loading }, okText:"編集" }}
         onFinish={async (value) => {
           
           await run(value as API.InventoryListItem);
