@@ -9,7 +9,7 @@ import {
 import { FormattedMessage, useIntl, useRequest } from '@umijs/max';
 import { Button, Col, message, Row } from 'antd';
 import type { FC } from 'react';
-import { addInventoryRecord, addRule, rule, updateInventoryRecord } from '@/services/ant-design-pro/api';
+import { updateInventoryRecord } from '@/services/ant-design-pro/api';
 
 interface UpdateFormProps {
   reload?: ActionType['reload'],
@@ -29,13 +29,13 @@ const UpdateForm: FC<UpdateFormProps> = (props) => {
   const {run, loading} = useRequest(updateInventoryRecord, {
     manual: true,
     onSuccess: () => {
-      messageApi.success('新規編集されました。');
+      messageApi.success('更新できました。');
       setTimeout(() => {
         reload?.();
       },1000)
     },
     onError: () => {
-      messageApi.error('新規編集できません。');
+      messageApi.error('更新できません。');
     },
   });
 
@@ -43,11 +43,11 @@ const UpdateForm: FC<UpdateFormProps> = (props) => {
     <>
       {contextHolder}
       <ModalForm
-        title="新規編集"
+        title="更新"
         trigger={<Button icon={<EditOutlined />}> </Button>}
         width="80%"
         initialValues={inventoryItem}
-        modalProps={{ okButtonProps: { loading }, okText:"編集" }}
+        modalProps={{ okButtonProps: { loading }, okText:"更新" }}
         onFinish={async (value) => {
           
           await run(value as API.InventoryListItem);
@@ -58,21 +58,41 @@ const UpdateForm: FC<UpdateFormProps> = (props) => {
 
         <Row>
           <Col span={8}>
-            <ProFormText rules={[{ required: true, message: "必要" }]} width="md" label="会社コード" name="companyCode" />
+            <ProFormText rules={[{ required: true, message: "必要" }]} width="md" label="会社コード" name="companyCode"
+              fieldProps={{
+                disabled: true,
+              }}
+            />
           </Col>
           <Col span={8}>
-            <ProFormText rules={[{ required: true, message: "必要" }]} width="md" label="従来工場コード" name="previousFactoryCode" />
+            <ProFormText rules={[{ required: true, message: "必要" }]} width="md" label="従来工場コード" name="previousFactoryCode"
+              fieldProps={{
+                disabled: true,
+              }}
+            />
           </Col>
           <Col span={8}>
-            <ProFormText rules={[{ required: true, message: "必要" }]} width="md" label="商品工場コード" name="productFactoryCode" />
+            <ProFormText rules={[{ required: true, message: "必要" }]} width="md" label="商品工場コード" name="productFactoryCode"
+              fieldProps={{
+                disabled: true,
+              }}
+            />
           </Col>
         </Row>
         <Row>
           <Col span={8}>
-            <ProFormDatePicker  rules={[{ required: true, message: "必要" }]} width="md" label="運用開始日" name="startOperationDate" />
+            <ProFormDatePicker  rules={[{ required: true, message: "必要" }]} width="md" label="運用開始日" name="startOperationDate"
+              fieldProps={{
+                disabled: true,
+              }}
+            />
           </Col>
           <Col span={8}>
-            <ProFormDatePicker  rules={[{ required: true, message: "必要" }]} width="md" label="運用終了日" name="endOperationDate" />
+            <ProFormDatePicker  rules={[{ required: true, message: "必要" }]} width="md" label="運用終了日" name="endOperationDate"
+              fieldProps={{
+                disabled: true,
+              }}
+            />
           </Col>
           <Col span={8}>
             <ProFormText width="md" label="従来工場名" name="previousFactoryName" />

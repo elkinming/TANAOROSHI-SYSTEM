@@ -70,6 +70,7 @@ declare namespace API {
     groupCorporateCode?: string;
     integrationPattern?: string;
     hulftid?: string;
+    // searchKeyword?: string;
   };
 
   type InventoryList = {

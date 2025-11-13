@@ -44,15 +44,8 @@ export default [
       },
     ],
   },
-  // {
-  //   name: 'list.table-list',
-  //   icon: 'table',
-  //   path: '/list',
-  //   component: './table-list',
-  // },
   {
     path: '*',
-    layout: false,
-    component: './404',
+    redirect: '/',
   },
 ];

@@ -9,17 +9,37 @@ import {
   ProDescriptions,
   ProTable,
 } from '@ant-design/pro-components';
-import { UploadOutlined } from '@ant-design/icons';
+import { SearchOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
 import { FormattedMessage, useIntl, useRequest } from '@umijs/max';
-import { Button, Drawer, Input, message, Space, Upload } from 'antd';
+import { Button, Drawer, Input, InputRef, message, Space, TableColumnType, Upload } from 'antd';
 import React, { useCallback, useRef, useState } from 'react';
-import { addInventoryRecordBatch, getAllInventory, removeRule, rule } from '@/services/ant-design-pro/api';
+import { addInventoryRecordBatch, getAllInventory } from '@/services/ant-design-pro/api';
 import CreateForm from './components/CreateForm';
 import UpdateForm from './components/UpdateForm';
 import K from '@/services/ant-design-pro/constants';
 import PageContent from '@/components/PageContent';
 import PageTitle from '@/components/PageTitle';
+import { FilterDropdownProps } from 'antd/es/table/interface';
+import Highlighter from 'react-highlight-words';
+
+interface DataType {
+  companyCode: string;
+  previousFactoryCode: string;
+  productFactoryCode: string;
+  startOperationDate: string;
+  endOperationDate: string;
+  previousFactoryName: string;
+  productFactoryName: string;
+  materialDepartmentCode: string;
+  environmentalInformation: string;
+  authenticationFlag: string;
+  groupCorporateCode: string;
+  integrationPattern: string;
+  hulftid: string;
+}
+
+type DataIndex = keyof DataType;
 
 const SearchList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
@@ -29,26 +49,9 @@ const SearchList: React.FC = () => {
   const [selectedRowsState, setSelectedRows] = useState<API.InventoryListItem[]>([]);
   const [tableData, setTableData] = useState<any[]>([]);
 
-  /**
-   * @en-US International configuration
-   * @zh-CN 国际化配置
-   * */
-  const intl = useIntl();
+  const searchInput = useRef<InputRef>(null);
 
   const [messageApi, contextHolder] = message.useMessage();
-
-  const { run: delRun, loading } = useRequest(removeRule, {
-    manual: true,
-    onSuccess: () => {
-      setSelectedRows([]);
-      actionRef.current?.reloadAndRest?.();
-
-      messageApi.success('Deleted successfully and will refresh soon');
-    },
-    onError: () => {
-      messageApi.error('Delete failed, please try again');
-    },
-  });
 
   const downloadData = () => {
     // console.log(tableData);
@@ -63,8 +66,6 @@ const SearchList: React.FC = () => {
       });
       return newRow;
     });
-
-    // console.log(mappedData);
 
     const worksheet = XLSX.utils.json_to_sheet(mappedData);
     const workbook = XLSX.utils.book_new();
@@ -92,8 +93,6 @@ const SearchList: React.FC = () => {
           return newRow;
         });
 
-        // console.log(normalizedData);
-
         await addInventoryRecordBatch(normalizedData);
         message.success('アップロードされました。');
         setTimeout(() => {
@@ -108,6 +107,63 @@ const SearchList: React.FC = () => {
     reader.readAsArrayBuffer(file);
     return false;
   }
+
+  const handleSearch = ( confirm: FilterDropdownProps['confirm'], ) => { confirm(); };
+
+  const handleReset = (clearFilters: () => void, confirm: FilterDropdownProps['confirm'],) => {
+    clearFilters();
+    confirm();
+  };
+
+  const getColumnSearchProps = (dataIndex: DataIndex): TableColumnType<DataType> => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <Input
+          ref={searchInput}
+          placeholder={`入力してください`}
+          value={selectedKeys[0]}
+          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => handleSearch(confirm)}
+          style={{ marginBottom: 8, display: 'block' }}
+        />
+        <Space>
+          <Button
+            onClick={() => clearFilters && handleReset(clearFilters, confirm)}
+            size="small"
+            style={{ width: 90 }}
+          >
+            クリア
+          </Button>
+
+          <Button
+            type="primary"
+            onClick={() => handleSearch(confirm)}
+            // icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            検索
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#1677ff' : undefined }} />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex]
+        .toString()
+        .toLowerCase()
+        .includes((value as string).toLowerCase()),
+    filterDropdownProps: {
+      onOpenChange(open) {
+        if (open) {
+          setTimeout(() => searchInput.current?.select(), 100);
+        }
+      },
+    },
+  
+  });
 
   const columns: ProColumns<API.InventoryListItem>[] = [
     {
@@ -124,78 +180,151 @@ const SearchList: React.FC = () => {
       title: "会社コード",
       dataIndex: 'companyCode',
       search: false,
-      // Define the column width
-      // width: 1000
+      sorter: (a, b) => {
+        if(a.companyCode! > b.companyCode!) return 1
+        else return -1
+      },
+      ...getColumnSearchProps('companyCode') as any,
     },
     {
       title: "従来工場コード",
       dataIndex: 'previousFactoryCode',
       valueType: 'textarea',
+      sorter: (a, b) => {
+        if(a.previousFactoryCode! > b.previousFactoryCode!) return 1
+        else return -1
+      },
+      ...getColumnSearchProps('previousFactoryCode') as any,
     },
     {
       title: "商品工場コード",
       dataIndex: 'productFactoryCode',
       valueType: 'textarea',
+      sorter: (a, b) => {
+        if(a.productFactoryCode! > b.productFactoryCode!) return 1
+        else return -1
+      },
+      ...getColumnSearchProps('productFactoryCode') as any,
     },
     {
       title: "運用開始日",
       dataIndex: 'startOperationDate',
       valueType: 'date',
       search: false,
+      sorter: (a, b) => {
+        if(a.startOperationDate! > b.startOperationDate!) return 1
+        else return -1
+      },
+      ...getColumnSearchProps('startOperationDate') as any,
     },
     {
       title: "運用終了日",
       dataIndex: 'endOperationDate',
       valueType: 'date',
       search: false,
+      sorter: (a, b) => {
+        if(a.endOperationDate! > b.endOperationDate!) return 1
+        else return -1
+      },
+      ...getColumnSearchProps('endOperationDate') as any,
     },
     {
       title: "従来工場名",
       dataIndex: 'previousFactoryName',
       valueType: 'textarea',
       search: false,
+      sorter: (a, b) => {
+        const firstElement = a.previousFactoryName ?? '';
+        const secondElement = b.previousFactoryName ?? '';
+        return firstElement.localeCompare(secondElement, "ja", { sensitivity: 'variant'  });
+      },
+      ...getColumnSearchProps('previousFactoryName') as any,
     },
     {
       title: "商品工場名",
       dataIndex: 'productFactoryName',
       valueType: 'textarea',
       search: false,
+      sorter: (a, b) => {
+        const firstElement = a.productFactoryName ?? '';
+        const secondElement = b.productFactoryName ?? '';
+        return firstElement.localeCompare(secondElement, "ja", { sensitivity: 'variant'  });
+      },
+      ...getColumnSearchProps('productFactoryName') as any,
     },
     {
       title: "マテリアル部署コード",
       dataIndex: 'materialDepartmentCode',
       valueType: 'textarea',
       search: false,
+      sorter: (a, b) => {
+        if(a.materialDepartmentCode! > b.materialDepartmentCode!) return 1
+        else return -1
+      },
+      ...getColumnSearchProps('materialDepartmentCode') as any,
     },
     {
       title: "環境情報",
       dataIndex: 'environmentalInformation',
       valueType: 'textarea',
       search: false,
+      sorter: (a, b) => {
+        if(a.environmentalInformation! > b.environmentalInformation!) return 1
+        else return -1
+      },
+      ...getColumnSearchProps('environmentalInformation') as any,
     },
     {
       title: "認証フラグ",
       dataIndex: 'authenticationFlag',
       valueType: 'textarea',
       search: false,
+      sorter: (a, b) => {
+        if(a.authenticationFlag! > b.authenticationFlag!) return 1
+        else return -1
+      },
+      ...getColumnSearchProps('authenticationFlag') as any,
     },
     {
       title: "企業コード",
       dataIndex: 'groupCorporateCode',
       valueType: 'textarea',
       search: false,
+      sorter: (a, b) => {
+        if(a.groupCorporateCode! > b.groupCorporateCode!) return 1
+        else return -1
+      },
+      ...getColumnSearchProps('groupCorporateCode') as any,
     },
     {
       title: "連携パターン",
       dataIndex: 'integrationPattern',
       valueType: 'textarea',
       search: false,
+      sorter: (a, b) => {
+        if(a.integrationPattern! > b.integrationPattern!) return 1
+        else return -1
+      },
+      ...getColumnSearchProps('integrationPattern') as any,
     },
     {
       title: "HULFTID",
       dataIndex: 'hulftid',
       valueType: 'textarea',
       search: false,
+      sorter: (a, b) => {
+        if(a.hulftid! > b.hulftid!) return 1
+        else return -1
+      },
+      ...getColumnSearchProps('hulftid') as any,
+    },
+    {
+      title: "",
+      dataIndex: 'searchKeyword',
+      valueType: 'textarea',
+      search: true,
+      hideInTable: true,
+      colSize: 2
     },
     
 
@@ -220,7 +349,9 @@ const SearchList: React.FC = () => {
           rowKey="key"
           search={{
             labelWidth: 120,
-            resetText:"クリア"
+            resetText:"クリア",
+            collapseRender:false,
+            defaultCollapsed:false
           }}
           toolBarRender={() => [
             <Space size="small">
@@ -238,6 +369,13 @@ const SearchList: React.FC = () => {
           columns={columns}
           options={{ fullScreen: false,  reload :false, density: false, setting: false}}
           scroll={{ x: 'max-content' }}
+          pagination={{
+            defaultPageSize: 10,
+            pageSizeOptions: [10,20],
+            showSizeChanger: true,
+            showTitle: true
+          }}
+          
 
         />
 
