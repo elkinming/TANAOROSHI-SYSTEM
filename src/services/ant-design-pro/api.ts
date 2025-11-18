@@ -86,3 +86,14 @@ export async function addInventoryRecordBatch(options?: { [key: string]: any }) 
     requestType: 'json',
   });
 }
+
+// Function for updating a batch of records.
+// Body: record[]
+export async function updateInventoryRecordBatch(options?: { [key: string]: any }) {
+  // return request<API.InventoryListItem[]>(`${URL}/inventory/record-batch`, {
+  return request<API.InventoryListItem[]>(`/inventory/record-batch`, {
+    method: 'PUT',
+    data: (options || []),
+    requestType: 'json',
+  });
+}

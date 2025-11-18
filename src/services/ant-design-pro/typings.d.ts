@@ -57,6 +57,7 @@ declare namespace API {
   };
 
   type InventoryListItem = {
+    uuid?: string;
     companyCode?: string;
     previousFactoryCode?: string;
     productFactoryCode?: string;
@@ -127,4 +128,12 @@ declare namespace API {
     description?: string;
     type?: NoticeIconItemType;
   };
+
+  type CommitRecordError = {
+    uuid: string = ""
+    level: string = ""
+    message: string = ""
+    detail: string = ""
+    code: string = ""
+  }
 }

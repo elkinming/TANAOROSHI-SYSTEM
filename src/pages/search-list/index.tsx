@@ -1,3 +1,4 @@
+import { SearchOutlined } from '@ant-design/icons';
 import type {
   ActionType,
   ProColumns,
@@ -9,19 +10,18 @@ import {
   ProDescriptions,
   ProTable,
 } from '@ant-design/pro-components';
-import { SearchOutlined } from '@ant-design/icons';
-import * as XLSX from 'xlsx';
 import { FormattedMessage, useIntl, useRequest } from '@umijs/max';
 import { Button, Drawer, Input, InputRef, message, Space, TableColumnType, Upload } from 'antd';
+import { FilterDropdownProps } from 'antd/es/table/interface';
 import React, { useCallback, useRef, useState } from 'react';
-import { addInventoryRecordBatch, getAllInventory } from '@/services/ant-design-pro/api';
-import CreateForm from './components/CreateForm';
-import UpdateForm from './components/UpdateForm';
-import K from '@/services/ant-design-pro/constants';
+import Highlighter from 'react-highlight-words';
+import * as XLSX from 'xlsx';
 import PageContent from '@/components/PageContent';
 import PageTitle from '@/components/PageTitle';
-import { FilterDropdownProps } from 'antd/es/table/interface';
-import Highlighter from 'react-highlight-words';
+import { addInventoryRecordBatch, getAllInventory } from '@/services/ant-design-pro/api';
+import K from '@/services/ant-design-pro/constants';
+import CreateForm from './components/CreateForm';
+import UpdateForm from './components/UpdateForm';
 
 interface DataType {
   companyCode: string;
@@ -346,7 +346,7 @@ const SearchList: React.FC = () => {
         <ProTable<API.InventoryListItem, API.InventoryParams>
           headerTitle=""
           actionRef={actionRef}
-          rowKey="key"
+          rowKey="uuid"
           search={{
             labelWidth: 120,
             resetText:"クリア",

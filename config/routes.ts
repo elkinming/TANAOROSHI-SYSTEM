@@ -42,6 +42,11 @@ export default [
         name: 'item',
         component: './search-list',
       },
+      {
+        path: '/search/item-v2',
+        name: 'item-v2',
+        component: './search-list-v2',
+      },
     ],
   },
   {

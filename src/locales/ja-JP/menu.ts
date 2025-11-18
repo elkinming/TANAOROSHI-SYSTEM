@@ -51,4 +51,5 @@ export default {
   'menu.editor.koni': 'コニエディター',
   'menu.search': 'マスタ管理',
   'menu.search.item': '工場マスタ',
+  'menu.search.item-v2': '工場マスタ「V2」',
 };
