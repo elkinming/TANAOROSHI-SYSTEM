@@ -91,8 +91,26 @@ export async function addInventoryRecordBatch(options?: { [key: string]: any }) 
 // Body: record[]
 export async function updateInventoryRecordBatch(options?: { [key: string]: any }) {
   // return request<API.InventoryListItem[]>(`${URL}/inventory/record-batch`, {
-  return request<API.InventoryListItem[]>(`/inventory/record-batch`, {
+  return request<API.InventoryListItem[]>(`/inventory/record/multiple`, {
     method: 'PUT',
+    data: (options || []),
+    requestType: 'json',
+  });
+}
+
+export async function insertInventoryRecordArray(options?: { [key: string]: any }) {
+  // return request<API.InventoryListItem[]>(`${URL}/inventory/record-batch`, {
+  return request<API.InventoryListItem[]>(`/inventory/record/multiple`, {
+    method: 'POST',
+    data: (options || []),
+    requestType: 'json',
+  });
+}
+
+export async function deleteInventoryRecordArray(options?: { [key: string]: any }) {
+  // return request<API.InventoryListItem[]>(`${URL}/inventory/record-batch`, {
+  return request<string[]>(`/inventory/record/multiple`, {
+    method: 'DELETE',
     data: (options || []),
     requestType: 'json',
   });

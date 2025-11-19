@@ -2,25 +2,20 @@ import { SearchOutlined } from '@ant-design/icons';
 import type {
   ActionType,
   ProColumns,
-  ProDescriptionsItemProps,
 } from '@ant-design/pro-components';
 import {
   EditableProTable,
-  FooterToolbar,
   PageContainer,
-  ProDescriptions,
-  ProTable,
 } from '@ant-design/pro-components';
 import { FormattedMessage, useIntl, useRequest } from '@umijs/max';
-import { Button, DatePicker, Drawer, Input, InputRef, message, Space, TableColumnType, Upload } from 'antd';
+import { Button, Input, InputRef, message, Space, TableColumnType, Upload } from 'antd';
 import { FilterDropdownProps } from 'antd/es/table/interface';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Highlighter from 'react-highlight-words';
 import { v4 as uuidv4 } from 'uuid';
 import * as XLSX from 'xlsx';
 import PageContent from '@/components/PageContent';
 import PageTitle from '@/components/PageTitle';
-import { addInventoryRecordBatch, getAllInventory, updateInventoryRecordBatch } from '@/services/ant-design-pro/api';
+import { addInventoryRecordBatch, deleteInventoryRecordArray, getAllInventory, insertInventoryRecordArray, updateInventoryRecordBatch } from '@/services/ant-design-pro/api';
 import K from '@/services/ant-design-pro/constants';
 import CreateForm from './components/CreateForm';
 import UpdateForm from './components/UpdateForm';
@@ -48,11 +43,19 @@ const SearchListV2: React.FC = () => {
   const formRef = useRef<any>(null);
 
   const [current, setCurrent] = useState<number>(1);
+  const [total, setTotal] = useState<number>(0);
   const [dataSource, setDataSource] = useState<API.InventoryListItem[]>([]);
   const [editDataSource, setEditDataSource] = useState<API.InventoryListItem[]>([]);
   const searchInput = useRef<InputRef>(null);
   const [editableKeys, setEditableRowKeys] = useState<any[]>([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<any[]>([]);
+  const [selectedDataSource, setSelectedDataSource] = useState<any[]>([]);
+  const [hideRowEditButton, setHideRowEditButton] = useState(false);
+  const [showRowSelection, setShowRowSelection] = useState(false);
+  const [allowEditPkFields, setAllowEditPkFields] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isInserting, setIsInserting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [messageApi, contextHolder] = message.useMessage();
   const [errorResults, setErrorResults] = useState<any[]>([]);
@@ -63,16 +66,30 @@ const SearchListV2: React.FC = () => {
     setErrorResults([]);
     setEditDataSource([]);
     setEditableRowKeys([]);
+    setSelectedRowKeys([]);
     setIsEditing(false);
-    // setSelectedKeys([]);
-    // setFilterData([]);
+    setIsInserting(false);
+    setIsDeleting(false);
+    setHideRowEditButton(false);   
+    setShowRowSelection(false);
   };
 
   const getDataSource = async(params? : any) => {
+    // console.log('getDataSource');
     initData();
     const response = await getAllInventory(params);
     // console.log(response);
     setDataSource(response.data!);
+    setTotal(response.data?.length ? response.data?.length : 0)
+    return response
+  }
+
+  const refreshDataSource = async(params? : any) => {
+    // console.log('refreshDataSource');
+    const response = await getAllInventory(params);
+    // console.log(response);
+    setDataSource(response.data!);
+    setTotal(response.data?.length ? response.data?.length : 0)
     return response
   }
 
@@ -80,7 +97,7 @@ const SearchListV2: React.FC = () => {
     try {
       const response = await updateInventoryRecordBatch(editDataSource);
       messageApi.success(<FormattedMessage id="msg.success.updateSuccess" />);
-      console.log(response);
+      // console.log(response);
       await getDataSource();
 
     } catch (e: any) {
@@ -89,6 +106,40 @@ const SearchListV2: React.FC = () => {
       const errorItems = rawErrorItems.filter(item => item.level === 'E' || item.level === 'W');
       setErrorResults(getUserErrors(errorItems));
       messageApi.error(<FormattedMessage id="msg.error.updateFailed" />);
+    }
+  }
+
+  const saveNewRecordsOnDataSource = async () => {
+    try {
+      const response = await insertInventoryRecordArray(editDataSource);
+      messageApi.success(<FormattedMessage id="msg.success.insertSuccess" />);
+      // console.log(response);
+      await getDataSource();
+
+    } catch (e: any) {
+      console.log(e.response.data);
+      const rawErrorItems = e.response.data.errorList as API.CommitRecordError[];
+      const errorItems = rawErrorItems.filter(item => item.level === 'E' || item.level === 'W');
+      setErrorResults(getUserErrors(errorItems));
+      messageApi.error(<FormattedMessage id="msg.error.insertFailed" />);
+    }
+  }
+
+  const deleteRecordsInDataSource = async () => {
+    try {
+      // const response = await deleteInventoryRecordArray(selectedRowKeys);
+      const response = await deleteInventoryRecordArray(selectedDataSource);
+      // console.log(selectedRowKeys);
+      messageApi.success(<FormattedMessage id="msg.success.deleteSuccess" />);
+      // console.log(response);
+      await getDataSource();
+
+    } catch (e: any) {
+      console.log(e.response.data);
+      const rawErrorItems = e.response.data.errorList as API.CommitRecordError[];
+      const errorItems = rawErrorItems.filter(item => item.level === 'E' || item.level === 'W');
+      setErrorResults(getUserErrors(errorItems));
+      messageApi.error(<FormattedMessage id="msg.error.insertFailed" />);
     }
   }
 
@@ -102,7 +153,7 @@ const SearchListV2: React.FC = () => {
     ]
     errorItems.forEach((errorItem) => {
       const record = editDataSource.find((element) => {
-        if(element.uuid == errorItem.uuid){
+        if(element.id == errorItem.record.id){
           return true;
         } 
         return false;
@@ -111,7 +162,7 @@ const SearchListV2: React.FC = () => {
         code: errorItem.code,
         detail: `${record?.companyCode}, ${record?.previousFactoryCode}, ${record?.productFactoryCode}, ${record?.startOperationDate}, ${record?.endOperationDate}, `,
         message: standardErrors[0].msg,
-        uuid: errorItem.uuid,
+        record: errorItem.record,
         level: errorItem.level,
       }
       standardErrors.forEach((standardError) => {
@@ -130,10 +181,6 @@ const SearchListV2: React.FC = () => {
   useEffect(() => {
     getDataSource();
   },[])
-
-//   useEffect(() => {
-//   console.log("New editDataSource:", editDataSource);
-// }, [editDataSource]);
 
 
   const downloadData = () => {
@@ -249,24 +296,69 @@ const SearchListV2: React.FC = () => {
   });
 
   const enableMultiUpdate = () => {
-    setEditableRowKeys(dataSource?.map((item) => item.uuid));
+    setEditableRowKeys(dataSource?.map((item) => item.id));
     setEditDataSource([]);
+    setIsInserting(false);
+    setIsDeleting(false);
+    setAllowEditPkFields(false);
     setIsEditing(true);
+    setHideRowEditButton(true);
   }
 
-  const cancelMultiUpdate = () => {
+  const enableMultiInsert = () => {
+    setEditDataSource([]);
+    setEditableRowKeys([]);
+    setIsEditing(false);   
+    setIsDeleting(false);
+    setIsInserting(true);
+    setHideRowEditButton(true);   
+    setAllowEditPkFields(true);
+  }
+
+  const enableMultiDelete = () => {
+    setEditDataSource([]);
+    setEditableRowKeys([]);
+    setIsEditing(false);   
+    setIsInserting(false);
+    setAllowEditPkFields(false);
+    setIsDeleting(true);
+    setHideRowEditButton(true);   
+    setShowRowSelection(true);
+  }
+
+  const cancelMultipleUpdate = () => {
     formRef.current!.resetFields();
     setEditableRowKeys([]);
     setEditDataSource([]);
     setErrorResults([]);
+    setSelectedRowKeys([]);
+    setIsInserting(false);
     setIsEditing(false);
+    setIsDeleting(false);
+    setHideRowEditButton(false); 
+    setAllowEditPkFields(false);  
+    setShowRowSelection(false);
+    refreshDataSource();
+  }
+
+  const addNewRecordRow = () => {
+    const newRecord = {
+      id: uuidv4(),
+    };
+    const dataSourceCopy = [...dataSource];
+    dataSourceCopy.unshift(newRecord);
+    setDataSource(dataSourceCopy);
+    const editableKeysCopy = [...editableKeys];
+    editableKeysCopy.unshift(newRecord.id);
+    setEditableRowKeys(editableKeysCopy);
+    formRef.current?.addEditRecord?.(newRecord);
   }
 
   const calculateStyleForm = (actualRecord: API.InventoryListItem, fieldName: string) => {
     let backgroundColor = 'white'
     let borderColor = undefined
     const recordFind = editDataSource.find((item) => {
-      if(item.uuid == actualRecord?.uuid){
+      if(item?.id == actualRecord?.id){
         return true;
       }
       return false;
@@ -274,7 +366,7 @@ const SearchListV2: React.FC = () => {
     if(recordFind){
 
       const originalRecord = dataSource.find((originalItem) => {
-        if(originalItem.uuid == actualRecord?.uuid){
+        if(originalItem.id == actualRecord?.id){
           return true;
         }
         return false;
@@ -303,23 +395,22 @@ const SearchListV2: React.FC = () => {
         );
       },
       editable: false,
-      hideInTable: isEditing
+      hideInTable: hideRowEditButton
     },
     {
       title: "会社コード",
       dataIndex: 'companyCode',
       search: false,
       valueType: "text",
+      editable: allowEditPkFields,
       sorter: (a, b) => {
         if(a.companyCode! > b.companyCode!) return 1
         else return -1
       },
-
       onCell: (record) => {
-        const recordExist = errorResults.some(item => item.uuid === record.uuid);
+        const recordExist = errorResults.some(item => item?.record.id === record?.id);
         return { style: { backgroundColor: recordExist ? '#f7a968ff' : undefined, }, }
       },
-      
       renderFormItem: (item, { record }) => {
         const {borderColor, backgroundColor} = calculateStyleForm(record!, 'companyCode');
         return (
@@ -337,12 +428,13 @@ const SearchListV2: React.FC = () => {
       title: "従来工場コード",
       dataIndex: 'previousFactoryCode',
       valueType: "text",
+      editable: allowEditPkFields,
       sorter: (a, b) => {
         if(a.previousFactoryCode! > b.previousFactoryCode!) return 1
         else return -1
       },
       onCell: (record) => {
-        const recordExist = errorResults.some(item => item.uuid === record.uuid);
+        const recordExist = errorResults.some(item => item?.record.id === record?.id);
         return { style: { backgroundColor: recordExist ? '#f7a968ff' : undefined, }, }
       },
       renderFormItem: (item, { record }) => {
@@ -361,12 +453,13 @@ const SearchListV2: React.FC = () => {
     {
       title: "商品工場コード",
       dataIndex: 'productFactoryCode',
+      editable: allowEditPkFields,
       sorter: (a, b) => {
         if(a.productFactoryCode! > b.productFactoryCode!) return 1
         else return -1
       },
       onCell: (record) => {
-        const recordExist = errorResults.some(item => item.uuid === record.uuid);
+        const recordExist = errorResults.some(item => item?.record.id === record?.id);
         return { style: { backgroundColor: recordExist ? '#f7a968ff' : undefined, }, }
       },
       renderFormItem: (item, { record }) => {
@@ -387,13 +480,14 @@ const SearchListV2: React.FC = () => {
       dataIndex: 'startOperationDate',
       valueType: 'date',
       search: false,
+      editable: allowEditPkFields,
       sorter: (a, b) => {
         if(a.startOperationDate! > b.startOperationDate!) return 1
         else return -1
       },
       onCell: (record) => {
         const {borderColor, backgroundColor} = calculateStyleForm(record!, 'startOperationDate');
-        const recordExist = errorResults.some(item => item.uuid === record.uuid);
+        const recordExist = errorResults.some(item => item?.record.id === record?.id);
         return { style: { backgroundColor: recordExist ? '#f7a968ff' : backgroundColor, }, }
       },
       ...getColumnSearchProps('startOperationDate') as any,
@@ -403,13 +497,15 @@ const SearchListV2: React.FC = () => {
       dataIndex: 'endOperationDate',
       valueType: 'date',
       search: false,
+      editable: allowEditPkFields,
       sorter: (a, b) => {
         if(a.endOperationDate! > b.endOperationDate!) return 1
         else return -1
       },
       onCell: (record) => {
-        const recordExist = errorResults.some(item => item.uuid === record.uuid);
-        return { style: { backgroundColor: recordExist ? '#f7a968ff' : undefined, }, }
+        const {borderColor, backgroundColor} = calculateStyleForm(record!, 'endOperationDate');
+        const recordExist = errorResults.some(item => item?.record.id === record?.id);
+        return { style: { backgroundColor: recordExist ? '#f7a968ff' : backgroundColor, }, }
       },
       ...getColumnSearchProps('endOperationDate') as any,
     },
@@ -423,7 +519,7 @@ const SearchListV2: React.FC = () => {
         return firstElement.localeCompare(secondElement, "ja", { sensitivity: 'variant'  });
       },
       onCell: (record) => {
-        const recordExist = errorResults.some(item => item.uuid === record.uuid);
+        const recordExist = errorResults.some(item => item?.record.id === record?.id);
         return { style: { backgroundColor: recordExist ? '#f7a968ff' : undefined, }, }
       },
       renderFormItem: (item, { record }) => {
@@ -449,7 +545,7 @@ const SearchListV2: React.FC = () => {
         return firstElement.localeCompare(secondElement, "ja", { sensitivity: 'variant'  });
       },
       onCell: (record) => {
-        const recordExist = errorResults.some(item => item.uuid === record.uuid);
+        const recordExist = errorResults.some(item => item?.record.id === record?.id);
         return { style: { backgroundColor: recordExist ? '#f7a968ff' : undefined, }, }
       },
       renderFormItem: (item, { record }) => {
@@ -474,7 +570,7 @@ const SearchListV2: React.FC = () => {
         else return -1
       },
       onCell: (record) => {
-        const recordExist = errorResults.some(item => item.uuid === record.uuid);
+        const recordExist = errorResults.some(item => item?.record.id === record?.id);
         return { style: { backgroundColor: recordExist ? '#f7a968ff' : undefined, }, }
       },
       renderFormItem: (item, { record }) => {
@@ -499,7 +595,7 @@ const SearchListV2: React.FC = () => {
         else return -1
       },
       onCell: (record) => {
-        const recordExist = errorResults.some(item => item.uuid === record.uuid);
+        const recordExist = errorResults.some(item => item?.record.id === record?.id);
         return { style: { backgroundColor: recordExist ? '#f7a968ff' : undefined, }, }
       },
       renderFormItem: (item, { record }) => {
@@ -524,7 +620,7 @@ const SearchListV2: React.FC = () => {
         else return -1
       },
       onCell: (record) => {
-        const recordExist = errorResults.some(item => item.uuid === record.uuid);
+        const recordExist = errorResults.some(item => item?.record.id === record?.id);
         return { style: { backgroundColor: recordExist ? '#f7a968ff' : undefined, }, }
       },
       renderFormItem: (item, { record }) => {
@@ -549,7 +645,7 @@ const SearchListV2: React.FC = () => {
         else return -1
       },
       onCell: (record) => {
-        const recordExist = errorResults.some(item => item.uuid === record.uuid);
+        const recordExist = errorResults.some(item => item?.record.id === record?.id);
         return { style: { backgroundColor: recordExist ? '#f7a968ff' : undefined, }, }
       },
       renderFormItem: (item, { record }) => {
@@ -574,7 +670,7 @@ const SearchListV2: React.FC = () => {
         else return -1
       },
       onCell: (record) => {
-        const recordExist = errorResults.some(item => item.uuid === record.uuid);
+        const recordExist = errorResults.some(item => item?.record.id === record?.id);
         return { style: { backgroundColor: recordExist ? '#f7a968ff' : undefined, }, }
       },
       renderFormItem: (item, { record }) => {
@@ -599,7 +695,7 @@ const SearchListV2: React.FC = () => {
         else return -1
       },
       onCell: (record) => {
-        const recordExist = errorResults.some(item => item.uuid === record.uuid);
+        const recordExist = errorResults.some(item => item?.record.id === record?.id);
         return { style: { backgroundColor: recordExist ? '#f7a968ff' : undefined, }, }
       },
       renderFormItem: (item, { record }) => {
@@ -621,18 +717,7 @@ const SearchListV2: React.FC = () => {
       search: true,
       hideInTable: true,
       colSize: 2
-    },
-    // {
-    //   title: '操作',
-    //   valueType: 'option',
-    //   width: 250,
-    //   render: () => {
-    //     return null;
-    //   },
-    //   search: false,
-    //   // hideInTable: !isEditing
-    // },
-    
+    },    
 
   ];
 
@@ -683,31 +768,64 @@ const SearchListV2: React.FC = () => {
         <EditableProTable<API.InventoryListItem, API.InventoryParams>
           headerTitle=""
           actionRef={actionRef}
-          rowKey="uuid"
+          rowKey="id"
+          size="small"
           search={{
             labelWidth: 120,
             resetText:"クリア",
             collapseRender:false,
             defaultCollapsed:false
           }}
+          rowSelection={ showRowSelection ? {
+            type: 'checkbox',
+            selectedRowKeys,
+            onChange: (selectedKeys) => {
+              console.log('selectedRowKeys changed: ', selectedKeys);
+              setSelectedRowKeys(selectedKeys);
+              const newSelectedDataSource: any[] = [];
+              dataSource.find((record) => {
+                selectedKeys.forEach((selectedKey) => {
+                  if(record.id == selectedKey){
+                    newSelectedDataSource.push(record);
+                  }
+                })
+              })
+              setSelectedDataSource(newSelectedDataSource)
+            },
+          } : undefined}
           request={async (params) => {
-            return await getDataSource(params);
+            return await refreshDataSource(params);
           }}
           toolBarRender={() => [
-            (!isEditing && 
+            (!isEditing && !isInserting && !isDeleting &&
               <Space size="small">
                 <CreateForm key="create" reload={actionRef.current?.reload} />
                 <Button onClick={downloadData}>ダウンロード</Button>
                 <Upload accept=".xlsx, .xls" beforeUpload={uploadData} showUploadList={false}>
                   <Button>アップロード</Button>
                 </Upload>
-                <Button onClick={enableMultiUpdate}>複数更新</Button>
+                <Button onClick={enableMultiUpdate}><FormattedMessage id="pages.searchList.batchUpdatingButton"/></Button>
+                <Button onClick={enableMultiInsert}><FormattedMessage id="pages.searchList.batchInsertionButton"/></Button>
+                <Button onClick={enableMultiDelete}><FormattedMessage id="pages.searchList.batchDeleteButton"/></Button>
               </Space>
             ),
             (isEditing && 
               <Space size="small">
-                <Button onClick={updateDataSource} type='primary'>保存</Button>
-                <Button onClick={cancelMultiUpdate}>キャンセル</Button>
+                <Button onClick={updateDataSource} type='primary'><FormattedMessage id="pages.searchList.saveButton"/></Button>
+                <Button onClick={cancelMultipleUpdate}><FormattedMessage id="pages.searchList.cancelButton"/></Button>
+              </Space>
+            ),
+            (isInserting && 
+              <Space size="small">
+                <Button onClick={saveNewRecordsOnDataSource} type='primary'><FormattedMessage id="pages.searchList.saveButton"/></Button>
+                <Button onClick={cancelMultipleUpdate}><FormattedMessage id="pages.searchList.cancelButton"/></Button>
+                <Button onClick={addNewRecordRow}><FormattedMessage id="pages.searchList.addRecordButton"/></Button>
+              </Space>
+            ),
+            (isDeleting && 
+              <Space size="small">
+                <Button onClick={deleteRecordsInDataSource} color="danger" variant="solid"><FormattedMessage id="pages.searchList.deleteButton"/></Button>
+                <Button onClick={cancelMultipleUpdate}><FormattedMessage id="pages.searchList.cancelButton"/></Button>
               </Space>
             )
             
@@ -728,6 +846,7 @@ const SearchListV2: React.FC = () => {
                 values={{ current: current, total: total, range0: range[0], range1: range[1] }}
               />
             ),
+            total: total,
             current: current,
             onChange: (page) => {
               setCurrent(page);
@@ -735,22 +854,16 @@ const SearchListV2: React.FC = () => {
             position: ['bottomRight'],
           }}
 
-          recordCreatorProps={{
-            newRecordType: 'dataSource',
-            record: () => ({
-              uuid: uuidv4()
-            }),
-          }}
+          recordCreatorProps={false}
 
           editableFormRef={formRef}
-          
+
           editable={{
             type: 'multiple',
             editableKeys,
             onValuesChange: (record, recordList) => {
-              // console.log(record);
               const editDataSourceIndex = editDataSource.findIndex((editRecord) => {
-                if (editRecord.uuid == record.uuid){
+                if (editRecord.id == record.id){
                   return true;
                 } else {
                   return false;
@@ -765,18 +878,12 @@ const SearchListV2: React.FC = () => {
                 newEditDataSource.push(record);
                 setEditDataSource(newEditDataSource);
               }
-
+              // console.log(editDataSource);
             },
             onChange: setEditableRowKeys,
-
           }}
-
-          
-
         />
-
       </PageContent>
-
     </PageContainer>
   );
 };

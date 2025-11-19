@@ -74,4 +74,12 @@ export default {
   'pages.searchTable.tenThousand': '万',
   'pages.searchTable.batchDeletion': 'バッチ削除',
   'pages.searchTable.batchApproval': 'バッチ承認',
+  
+  'pages.searchList.batchInsertionButton':'複数登録',
+  'pages.searchList.batchUpdatingButton':'複数更新',
+  'pages.searchList.batchDeleteButton':'複数削除',
+  'pages.searchList.saveButton':'保存',
+  'pages.searchList.cancelButton':'キャンセル',
+  'pages.searchList.addRecordButton':'新規登録',
+  'pages.searchList.deleteButton':'削除',
 };
